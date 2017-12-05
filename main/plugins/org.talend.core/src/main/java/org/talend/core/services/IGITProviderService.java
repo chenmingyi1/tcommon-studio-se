@@ -42,4 +42,6 @@ public interface IGITProviderService extends IService {
 
     public void reloadDynamicDistributions(IProgressMonitor monitor) throws Exception;
 
+    public void clean();
+
 }
