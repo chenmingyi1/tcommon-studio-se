@@ -604,6 +604,8 @@ public class DatabaseForm extends AbstractForm {
                 doRemoveHiveSetup();
                 initHiveInfo();
                 doHiveDBTypeSelected();
+            } else if (isOracleCustomDBConnSelected()) {
+                initOracleCustomEncryptionInfo();
             } else {
                 doHiveDBTypeNotSelected();
             }
@@ -1001,7 +1003,7 @@ public class DatabaseForm extends AbstractForm {
 
         createHadoopUIContentsForHiveEmbedded(typeDbCompositeParent);
         createMetastoreUIContentsForHiveEmbedded(typeDbCompositeParent);
-        createEncryptionGroupForHive(typeDbCompositeParent);
+        createEncryptionGroup(typeDbCompositeParent);
         createTableInfoPartForHbase(typeDbCompositeParent);
         createTableInfoPartForMaprdb(typeDbCompositeParent);
         createZnodeParent(typeDbCompositeParent);
@@ -1250,16 +1252,16 @@ public class DatabaseForm extends AbstractForm {
         initForImpalaAuthentication();
     }
 
-    private void createEncryptionGroupForHive(Composite parent) {
+    private void createEncryptionGroup(Composite parent) {
         encryptionGrp = new Group(parent, SWT.NONE);
         GridLayout parentLayout = (GridLayout) parent.getLayout();
-        encryptionGrp.setText(Messages.getString("DatabaseForm.hive.encryption")); //$NON-NLS-1$
+        encryptionGrp.setText(Messages.getString("DatabaseForm.encryption")); //$NON-NLS-1$
         GridDataFactory.fillDefaults().span(parentLayout.numColumns, 1).align(SWT.FILL, SWT.BEGINNING).grab(true, false)
                 .applyTo(encryptionGrp);
         encryptionGrp.setLayout(new GridLayout(1, true));
 
         useSSLEncryption = new Button(encryptionGrp, SWT.CHECK);
-        useSSLEncryption.setText(Messages.getString("DatabaseForm.hive.encryption.useSSLEncryption")); //$NON-NLS-1$
+        useSSLEncryption.setText(Messages.getString("DatabaseForm.encryption.useSSLEncryption")); //$NON-NLS-1$
         GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING | GridData.VERTICAL_ALIGN_CENTER);
         gridData.horizontalSpan = 1;
         useSSLEncryption.setLayoutData(gridData);
@@ -1277,7 +1279,7 @@ public class DatabaseForm extends AbstractForm {
         leftHalfPart.setLayoutData(gridData);
         leftHalfPart.setLayout(new GridLayout(3, false));
         trustStorePath = new LabelledFileField(leftHalfPart,
-                Messages.getString("DatabaseForm.hive.encryption.useSSLEncryption.trustStorePath"), null, 1);
+                Messages.getString("DatabaseForm.encryption.useSSLEncryption.trustStorePath"), null, 1); //$NON-NLS-1$
 
         Composite rightHalfPart = new Composite(sslEncryptionDetailComposite, SWT.NONE);
         gridData = new GridData(GridData.FILL_BOTH);
@@ -1285,27 +1287,27 @@ public class DatabaseForm extends AbstractForm {
         rightHalfPart.setLayoutData(gridData);
         rightHalfPart.setLayout(new GridLayout(2, false));
         trustStorePassword = new LabelledText(rightHalfPart,
-                Messages.getString("DatabaseForm.hive.encryption.useSSLEncryption.trustStorePassword"), 1, //$NON-NLS-1$
+                Messages.getString("DatabaseForm.encryption.useSSLEncryption.trustStorePassword"), 1, //$NON-NLS-1$
                 SWT.PASSWORD | SWT.SINGLE | SWT.BORDER);
 
         addListenersForEncryptionGroup();
     }
 
     private void updateSSLEncryptionDetailsDisplayStatus() {
-        boolean isSupport = isSupportHiveTrustStore();
+        boolean isSupport = isSupportSSLTrustStore();
         GridData hadoopData = (GridData) sslEncryptionDetailComposite.getLayoutData();
         hadoopData.exclude = !isSupport;
         sslEncryptionDetailComposite.setVisible(isSupport);
         sslEncryptionDetailComposite.setLayoutData(hadoopData);
         sslEncryptionDetailComposite.getParent().getParent().layout();
 
-        setHiveTrustStoreParameters(!isSupport);
+        setSSLTrustStoreParameters(!isSupport);
         String url = getStringConnection();
         urlConnectionStringText.setText(url);
         getConnection().setURL(url);
     }
 
-    private void setHiveTrustStoreParameters(boolean shouldRemove) {
+    private void setSSLTrustStoreParameters(boolean shouldRemove) {
         if (shouldRemove) {
             getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
             getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
@@ -1749,10 +1751,10 @@ public class DatabaseForm extends AbstractForm {
     }
 
     private void showIfSupportEncryption() {
-        setHidHiveEncryption(!isSupportHiveEncryption());
+        setHideSSLEncryption(!isSupportSSLEncryption());
     }
 
-    private boolean isSupportHiveEncryption() {
+    private boolean isSupportSSLEncryption() {
         if (isHiveDBConnSelected()) {
             IHDistribution hiveDistribution = getCurrentHiveDistribution(true);
             if (hiveDistribution != null) {
@@ -1770,16 +1772,18 @@ public class DatabaseForm extends AbstractForm {
                 }
                 return true;
             }
+        } else if (isOracleCustomDBConnSelected()) {
+            return true;
         }
         return false;
     }
 
-    private boolean isSupportHiveTrustStore() {
+    private boolean isSupportSSLTrustStore() {
         if (isHiveDBConnSelected()) {
             // if (!useSSLEncryption.isVisible()) {
             // return false;
             // }
-            if (!isSupportHiveEncryption()) {
+            if (!isSupportSSLEncryption()) {
                 return false;
             }
             if (!useSSLEncryption.getSelection()) {
@@ -1798,24 +1802,26 @@ public class DatabaseForm extends AbstractForm {
                     return true;
                 }
             }
+        } else if (isOracleCustomDBConnSelected()) {
+            return useSSLEncryption.getSelection();
         }
         return false;
     }
 
-    private void setHidHiveEncryption(boolean hide) {
+    private void setHideSSLEncryption(boolean hide) {
         GridData hadoopData = (GridData) encryptionGrp.getLayoutData();
         hadoopData.exclude = hide;
         encryptionGrp.setVisible(!hide);
         encryptionGrp.setLayoutData(hadoopData);
         encryptionGrp.getParent().layout();
-        setHiveTrustStoreParameters(hide);
+        setSSLTrustStoreParameters(hide);
         if (hide) {
             getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_USE_SSL);
         } else {
             getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_USE_SSL,
                     String.valueOf(useSSLEncryption.getSelection()));
         }
-        if (isHiveDBConnSelected()) {
+        if (isHiveDBConnSelected() || isOracleCustomDBConnSelected()) {
             String url = getStringConnection();
             urlConnectionStringText.setText(url);
             getConnection().setURL(url);
@@ -4436,6 +4442,9 @@ public class DatabaseForm extends AbstractForm {
                     urlConnectionStringText.setText(getStringConnection());
                     checkFieldsValue();
                 }
+                if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(getConnectionDBType())) {
+                    initOracleCustomEncryptionInfo();
+                }
             }
         });
         hideDbVersion();
@@ -5450,6 +5459,16 @@ public class DatabaseForm extends AbstractForm {
         return EDatabaseTypeName.IMPALA.getDisplayName().equals(getConnectionDBType());
     }
 
+    private boolean isOracleCustomDBConnSelected() {
+        if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(getConnectionDBType())) {
+            if (EDatabaseVersion4Drivers.ORACLE_12.name().equals(getConnection().getDbVersionString())
+                    || EDatabaseVersion4Drivers.ORACLE_11.name().equals(getConnection().getDbVersionString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Ensures that fields are set. Update checkEnable / use to checkConnection().
      */
@@ -6282,7 +6301,7 @@ public class DatabaseForm extends AbstractForm {
             addContextParams(EDBParamName.HiveKeyTabPrincipal, isHivePrincipal && useKeyTab.getSelection());
             addContextParams(EDBParamName.HiveKeyTab, isHivePrincipal && useKeyTab.getSelection());
             addContextParams(EDBParamName.hiveAdditionalJDBCParameters, isSupportHiveAdditionalSettings());
-            boolean addSSLEncryptionContext = isSupportHiveEncryption() && isSupportHiveTrustStore();
+            boolean addSSLEncryptionContext = isSupportSSLEncryption() && isSupportSSLTrustStore();
             addContextParams(EDBParamName.hiveSSLTrustStorePath, addSSLEncryptionContext);
             addContextParams(EDBParamName.hiveSSLTrustStorePassword, addSSLEncryptionContext);
 
@@ -6894,6 +6913,23 @@ public class DatabaseForm extends AbstractForm {
         updateYarnStatus();
 
         updateYarnInfo(hiveDistribution, hdVersion);
+        showIfSupportEncryption();
+        updateSSLEncryptionDetailsDisplayStatus();
+    }
+
+    protected void initOracleCustomEncryptionInfo() {
+        DatabaseConnection connection = getConnection();
+        boolean useSSL = Boolean.parseBoolean(connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_USE_SSL));
+        String trustStorePathStr = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
+        String trustStorePasswordStr = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
+        useSSLEncryption.setSelection(useSSL);
+        trustStorePath.setText(trustStorePathStr == null ? "" : trustStorePathStr);
+        if (trustStorePasswordStr == null) {
+            trustStorePasswordStr = "";
+        } else {
+            trustStorePasswordStr = connection.getValue(trustStorePasswordStr, false);
+        }
+        trustStorePassword.setText(trustStorePasswordStr);
         showIfSupportEncryption();
         updateSSLEncryptionDetailsDisplayStatus();
     }

@@ -1423,17 +1423,20 @@ public class RepositoryToComponentProperty {
                     connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS));
         }
 
-        if (value.equals("USE_SSL") && EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)) {
+        if (value.equals("USE_SSL") && (EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)
+                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType))) {
             String message = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_USE_SSL);
             return Boolean.parseBoolean(message);
         }
 
-        if (value.equals("SSL_TRUST_STORE") && EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)) {
+        if (value.equals("SSL_TRUST_STORE") && (EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)
+                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType))) {
             return getAppropriateValue(connection,
                     connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH));
         }
 
-        if (value.equals("SSL_TRUST_STORE_PASSWORD") && EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)) {
+        if (value.equals("SSL_TRUST_STORE_PASSWORD") && (EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)
+                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType))) {
             return getAppropriateValue(connection, connection
                     .getValue(connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD), false));
         }
