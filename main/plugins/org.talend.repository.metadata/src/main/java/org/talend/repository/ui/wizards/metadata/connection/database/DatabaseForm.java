@@ -249,6 +249,16 @@ public class DatabaseForm extends AbstractForm {
 
     private LabelledText trustStorePassword;
 
+    private Composite sslClientAuthComposite;
+
+    private Button needClientAuth;
+
+    private Composite sslKeyStoreComposite;
+
+    private LabelledFileField keyStorePath;
+
+    private LabelledText keyStorePassword;
+
     /**
      * Fields for general jdbc
      */
@@ -1270,10 +1280,17 @@ public class DatabaseForm extends AbstractForm {
         gridData = new GridData(GridData.FILL_BOTH);
         gridData.horizontalSpan = 1;
         sslEncryptionDetailComposite.setLayoutData(gridData);
-        GridLayout sslEncryptionDetailLayout = new GridLayout(2, true);
+        GridLayout sslEncryptionDetailLayout = new GridLayout(1, true);
         sslEncryptionDetailComposite.setLayout(sslEncryptionDetailLayout);
 
-        Composite leftHalfPart = new Composite(sslEncryptionDetailComposite, SWT.NONE);
+        Composite sslTrustStoreComposite = new Composite(sslEncryptionDetailComposite, SWT.NONE);
+        gridData = new GridData(GridData.FILL_BOTH);
+        gridData.horizontalSpan = 1;
+        sslTrustStoreComposite.setLayoutData(gridData);
+        GridLayout sslTrustStoreLayout = new GridLayout(2, true);
+        sslTrustStoreComposite.setLayout(sslTrustStoreLayout);
+
+        Composite leftHalfPart = new Composite(sslTrustStoreComposite, SWT.NONE);
         gridData = new GridData(GridData.FILL_BOTH);
         gridData.verticalAlignment = GridData.VERTICAL_ALIGN_CENTER;
         leftHalfPart.setLayoutData(gridData);
@@ -1281,7 +1298,7 @@ public class DatabaseForm extends AbstractForm {
         trustStorePath = new LabelledFileField(leftHalfPart,
                 Messages.getString("DatabaseForm.encryption.useSSLEncryption.trustStorePath"), null, 1); //$NON-NLS-1$
 
-        Composite rightHalfPart = new Composite(sslEncryptionDetailComposite, SWT.NONE);
+        Composite rightHalfPart = new Composite(sslTrustStoreComposite, SWT.NONE);
         gridData = new GridData(GridData.FILL_BOTH);
         gridData.verticalAlignment = GridData.VERTICAL_ALIGN_CENTER;
         rightHalfPart.setLayoutData(gridData);
@@ -1290,18 +1307,66 @@ public class DatabaseForm extends AbstractForm {
                 Messages.getString("DatabaseForm.encryption.useSSLEncryption.trustStorePassword"), 1, //$NON-NLS-1$
                 SWT.PASSWORD | SWT.SINGLE | SWT.BORDER);
 
+        sslClientAuthComposite = new Composite(sslEncryptionDetailComposite, SWT.NONE);
+        gridData = new GridData(GridData.FILL_BOTH);
+        gridData.horizontalSpan = 1;
+        sslClientAuthComposite.setLayoutData(gridData);
+        GridLayout sslClientAuthLayout = new GridLayout(1, true);
+        sslClientAuthComposite.setLayout(sslClientAuthLayout);
+
+        needClientAuth = new Button(sslClientAuthComposite, SWT.CHECK);
+        needClientAuth.setText(Messages.getString("DatabaseForm.encryption.useSSLEncryption.needClientAuth")); //$NON-NLS-1$
+        gridData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING | GridData.VERTICAL_ALIGN_CENTER);
+        gridData.horizontalSpan = 1;
+        needClientAuth.setLayoutData(gridData);
+
+        sslKeyStoreComposite = new Composite(sslClientAuthComposite, SWT.NONE);
+        gridData = new GridData(GridData.FILL_BOTH);
+        gridData.horizontalSpan = 1;
+        sslKeyStoreComposite.setLayoutData(gridData);
+        GridLayout sslKeyStoreLayout = new GridLayout(2, true);
+        sslKeyStoreComposite.setLayout(sslKeyStoreLayout);
+
+        leftHalfPart = new Composite(sslKeyStoreComposite, SWT.NONE);
+        gridData = new GridData(GridData.FILL_BOTH);
+        gridData.verticalAlignment = GridData.VERTICAL_ALIGN_CENTER;
+        leftHalfPart.setLayoutData(gridData);
+        leftHalfPart.setLayout(new GridLayout(3, false));
+        keyStorePath = new LabelledFileField(leftHalfPart,
+                Messages.getString("DatabaseForm.encryption.useSSLEncryption.keyStorePath"), null, 1); //$NON-NLS-1$
+
+        rightHalfPart = new Composite(sslKeyStoreComposite, SWT.NONE);
+        gridData = new GridData(GridData.FILL_BOTH);
+        gridData.verticalAlignment = GridData.VERTICAL_ALIGN_CENTER;
+        rightHalfPart.setLayoutData(gridData);
+        rightHalfPart.setLayout(new GridLayout(2, false));
+        keyStorePassword = new LabelledText(rightHalfPart,
+                Messages.getString("DatabaseForm.encryption.useSSLEncryption.keyStorePassword"), 1, //$NON-NLS-1$
+                SWT.PASSWORD | SWT.SINGLE | SWT.BORDER);
+
         addListenersForEncryptionGroup();
     }
 
     private void updateSSLEncryptionDetailsDisplayStatus() {
-        boolean isSupport = isSupportSSLTrustStore();
-        GridData hadoopData = (GridData) sslEncryptionDetailComposite.getLayoutData();
-        hadoopData.exclude = !isSupport;
-        sslEncryptionDetailComposite.setVisible(isSupport);
+        boolean isSupportSSLKeyStore = isSupportSSLKeyStore();
+        GridData hadoopData = (GridData) sslKeyStoreComposite.getLayoutData();
+        hadoopData.exclude = !isSupportSSLKeyStore;
+        sslKeyStoreComposite.setVisible(isSupportSSLKeyStore);
+
+        boolean isSupportSSLClientAuth = isSupportSSLClientAuth();
+        hadoopData = (GridData) sslClientAuthComposite.getLayoutData();
+        hadoopData.exclude = !isSupportSSLClientAuth;
+        sslClientAuthComposite.setVisible(isSupportSSLClientAuth);
+
+        boolean isSupportSSLTrustStore = isSupportSSLTrustStore();
+        hadoopData = (GridData) sslEncryptionDetailComposite.getLayoutData();
+        hadoopData.exclude = !isSupportSSLTrustStore;
+        sslEncryptionDetailComposite.setVisible(isSupportSSLTrustStore);
         sslEncryptionDetailComposite.setLayoutData(hadoopData);
         sslEncryptionDetailComposite.getParent().getParent().layout();
 
-        setSSLTrustStoreParameters(!isSupport);
+        setSSLTrustStoreParameters(!isSupportSSLTrustStore);
+        setSSLKeyStoreParameters(!isSupportSSLKeyStore);
         String url = getStringConnection();
         urlConnectionStringText.setText(url);
         getConnection().setURL(url);
@@ -1314,6 +1379,16 @@ public class DatabaseForm extends AbstractForm {
         } else {
             updateTrustStorePathParameter();
             updateTrustStorePasswordParameter();
+        }
+    }
+
+    private void setSSLKeyStoreParameters(boolean shouldRemove) {
+        if (shouldRemove) {
+            getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PATH);
+            getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PASSWORD);
+        } else {
+            updateKeyStorePathParameter();
+            updateKeyStorePasswordParameter();
         }
     }
 
@@ -1808,6 +1883,20 @@ public class DatabaseForm extends AbstractForm {
         return false;
     }
 
+    private boolean isSupportSSLClientAuth() {
+        if (isOracleCustomDBConnSelected()) {
+            return useSSLEncryption.getSelection();
+        }
+        return false;
+    }
+
+    private boolean isSupportSSLKeyStore() {
+        if (isOracleCustomDBConnSelected()) {
+            return useSSLEncryption.getSelection() && needClientAuth.getSelection();
+        }
+        return false;
+    }
+
     private void setHideSSLEncryption(boolean hide) {
         GridData hadoopData = (GridData) encryptionGrp.getLayoutData();
         hadoopData.exclude = hide;
@@ -1815,11 +1904,15 @@ public class DatabaseForm extends AbstractForm {
         encryptionGrp.setLayoutData(hadoopData);
         encryptionGrp.getParent().layout();
         setSSLTrustStoreParameters(hide);
+        setSSLKeyStoreParameters(hide);
         if (hide) {
             getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_USE_SSL);
+            getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_NEED_CLIENT_AUTH);
         } else {
             getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_USE_SSL,
                     String.valueOf(useSSLEncryption.getSelection()));
+            getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_NEED_CLIENT_AUTH,
+                    String.valueOf(needClientAuth.getSelection()));
         }
         if (isHiveDBConnSelected() || isOracleCustomDBConnSelected()) {
             String url = getStringConnection();
@@ -2579,6 +2672,50 @@ public class DatabaseForm extends AbstractForm {
                 }
             }
         });
+
+        needClientAuth.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (!isContextMode()) {
+                    getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_NEED_CLIENT_AUTH,
+                            String.valueOf(needClientAuth.getSelection()));
+                    updateSSLEncryptionDetailsDisplayStatus();
+                    urlConnectionStringText.setText(getStringConnection());
+                }
+            }
+
+        });
+        keyStorePath.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(ModifyEvent e) {
+                if (!isContextMode()) {
+                    updateKeyStorePathParameter();
+                    urlConnectionStringText.setText(getStringConnection());
+                }
+            }
+        });
+        keyStorePath.setAfterSetNewValueCallable(new Callable<Void>() {
+
+            @Override
+            public Void call() throws Exception {
+                if (!isContextMode()) {
+                    updateKeyStorePathParameter();
+                    urlConnectionStringText.setText(getStringConnection());
+                }
+                return null;
+            }
+        });
+        keyStorePassword.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(ModifyEvent e) {
+                if (!isContextMode()) {
+                    updateKeyStorePasswordParameter();
+                }
+            }
+        });
     }
 
     private void updateTrustStorePathParameter() {
@@ -2588,6 +2725,18 @@ public class DatabaseForm extends AbstractForm {
     private void updateTrustStorePasswordParameter() {
         getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD,
                 getConnection().getValue(trustStorePassword.getText(), true));
+        String url = getStringConnection();
+        urlConnectionStringText.setText(url);
+        getConnection().setURL(url);
+    }
+
+    private void updateKeyStorePathParameter() {
+        getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PATH, keyStorePath.getText());
+    }
+
+    private void updateKeyStorePasswordParameter() {
+        getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PASSWORD,
+                getConnection().getValue(keyStorePassword.getText(), true));
         String url = getStringConnection();
         urlConnectionStringText.setText(url);
         getConnection().setURL(url);
@@ -6923,13 +7072,27 @@ public class DatabaseForm extends AbstractForm {
         String trustStorePathStr = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH);
         String trustStorePasswordStr = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD);
         useSSLEncryption.setSelection(useSSL);
-        trustStorePath.setText(trustStorePathStr == null ? "" : trustStorePathStr);
+        trustStorePath.setText(trustStorePathStr == null ? "" : trustStorePathStr); //$NON-NLS-1$
         if (trustStorePasswordStr == null) {
-            trustStorePasswordStr = "";
+            trustStorePasswordStr = ""; //$NON-NLS-1$
         } else {
             trustStorePasswordStr = connection.getValue(trustStorePasswordStr, false);
         }
         trustStorePassword.setText(trustStorePasswordStr);
+
+        boolean sslClientAuth = Boolean
+                .parseBoolean(connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_NEED_CLIENT_AUTH));
+        String keyStorePathStr = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PATH);
+        String keyStorePasswordStr = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PASSWORD);
+        needClientAuth.setSelection(sslClientAuth);
+        keyStorePath.setText(keyStorePathStr == null ? "" : keyStorePathStr); //$NON-NLS-1$
+        if (keyStorePasswordStr == null) {
+            keyStorePasswordStr = ""; //$NON-NLS-1$
+        } else {
+            keyStorePasswordStr = connection.getValue(keyStorePasswordStr, false);
+        }
+        keyStorePassword.setText(keyStorePasswordStr);
+
         showIfSupportEncryption();
         updateSSLEncryptionDetailsDisplayStatus();
     }
