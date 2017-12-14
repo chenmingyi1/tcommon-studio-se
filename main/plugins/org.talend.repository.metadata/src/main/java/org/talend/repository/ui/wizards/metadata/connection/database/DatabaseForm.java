@@ -3238,6 +3238,23 @@ public class DatabaseForm extends AbstractForm {
         impalaPrincipalTxt.setEditable(!isContextMode());
     }
 
+    private void adaptOracleCustomPartEditable() {
+        useSSLEncryption.setEnabled(!isContextMode());
+        trustStorePath.setEditable(!isContextMode());
+        trustStorePassword.setEditable(!isContextMode());
+        needClientAuth.setEnabled(!isContextMode());
+        keyStorePath.setEditable(!isContextMode());
+        keyStorePassword.setEditable(!isContextMode());
+        disableCBCProtection.setEnabled(!isContextMode());
+        if (isContextMode()) {
+            trustStorePassword.getTextControl().setEchoChar('\0');
+            keyStorePassword.getTextControl().setEchoChar('\0');
+        } else {
+            trustStorePassword.getTextControl().setEchoChar('*');
+            keyStorePassword.getTextControl().setEchoChar('*');
+        }
+    }
+
     private void updateHadoopProperties(boolean isEditable) {
         refreshHadoopProperties();
         refreshHiveJdbcProperties();
@@ -6474,6 +6491,7 @@ public class DatabaseForm extends AbstractForm {
         collectHBaseContextParams();
         collectMaprdbContextParams();
         collectImpalaContextParams();
+        collectOracleCustomContextParams();
     }
 
     private void collectHiveContextParams() {
@@ -6562,6 +6580,23 @@ public class DatabaseForm extends AbstractForm {
             addContextParams(EDBParamName.Port, true);
             addContextParams(EDBParamName.Database, true);
             addContextParams(EDBParamName.ImpalaPrincipal, useKerberosForImpala.getSelection());
+        }
+    }
+
+    private void collectOracleCustomContextParams() {
+        // recollect context params for Oracle Custom
+        if (isOracleCustomDBConnSelected()) {
+            getConetxtParams().clear();
+            addContextParams(EDBParamName.Server, true);
+            addContextParams(EDBParamName.Password, true);
+            addContextParams(EDBParamName.Login, true);
+            addContextParams(EDBParamName.Schema, true);
+            boolean addSSLEncryptionContext = isSupportSSLEncryption() && isSupportSSLTrustStore();
+            addContextParams(EDBParamName.SSLTrustStorePath, addSSLEncryptionContext);
+            addContextParams(EDBParamName.SSLTrustStorePassword, addSSLEncryptionContext);
+            boolean addSSLClientAuthContext = isSupportSSLEncryption() && isSupportSSLClientAuth();
+            addContextParams(EDBParamName.SSLKeyStorePath, addSSLClientAuthContext);
+            addContextParams(EDBParamName.SSLKeyStorePassword, addSSLClientAuthContext);
         }
     }
 
@@ -6856,6 +6891,9 @@ public class DatabaseForm extends AbstractForm {
         if (isImpalaDBConnSelected()) {
             adaptImpalaHadoopPartEditable();
             updateHadoopProperties(!isContextMode());
+        }
+        if (isOracleCustomDBConnSelected()) {
+            adaptOracleCustomPartEditable();
         }
     }
 

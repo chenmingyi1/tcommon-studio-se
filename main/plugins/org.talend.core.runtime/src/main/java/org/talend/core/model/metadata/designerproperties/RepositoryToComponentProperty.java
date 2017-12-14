@@ -1453,6 +1453,11 @@ public class RepositoryToComponentProperty {
                     connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PATH));
         }
 
+        if (value.equals("DISABLE_CBC_PROTECTION") && EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType)) {
+            String message = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_DISABLE_CBC_PROTECTION);
+            return Boolean.parseBoolean(message);
+        }
+
         if (value.equals("SSL_KEYSTORE_PASSWORD") && EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType)) {
             return getAppropriateValue(connection, connection
                     .getValue(connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_KEY_STORE_PASSWORD), false));
