@@ -122,6 +122,7 @@ import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.utils.ContextParameterUtils;
 import org.talend.core.prefs.ITalendCorePrefConstants;
+import org.talend.core.prefs.SSLPreferenceConstants;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.runtime.CoreRuntimePlugin;
 import org.talend.core.runtime.hd.IHDistribution;
@@ -3993,6 +3994,26 @@ public class DatabaseForm extends AbstractForm {
                     }
                 }
             } else {
+                if (isOracleCustomDBConnSelected()) {
+                    if (useSSLEncryption.getSelection()) {
+                        StringBuffer sb = new StringBuffer();
+                        sb.append("jsse.enableCBCProtection").append("=").append("false").append("&");//$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
+                        sb.append(SSLPreferenceConstants.TRUSTSTORE_TYPE).append("=") //$NON-NLS-1$
+                                .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]).append("&");//$NON-NLS-1$
+                        sb.append(SSLPreferenceConstants.TRUSTSTORE_FILE).append("=").append(trustStorePath.getText()) //$NON-NLS-1$
+                                .append("&");//$NON-NLS-1$
+                        sb.append(SSLPreferenceConstants.TRUSTSTORE_PASSWORD).append("=").append(trustStorePassword.getText()) //$NON-NLS-1$
+                                .append("&");//$NON-NLS-1$
+                        if (needClientAuth.getSelection()) {
+                            sb.append(SSLPreferenceConstants.KEYSTORE_TYPE).append("=") //$NON-NLS-1$
+                                    .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]).append("&");//$NON-NLS-1$
+                            sb.append(SSLPreferenceConstants.KEYSTORE_FILE).append("=").append(keyStorePath.getText()) //$NON-NLS-1$
+                                    .append("&");//$NON-NLS-1$
+                            sb.append(SSLPreferenceConstants.KEYSTORE_PASSWORD).append("=").append(keyStorePassword.getText());//$NON-NLS-1$
+                        }
+                        additionParamText.setText(sb.toString());
+                    }
+                }
                 EDatabaseVersion4Drivers version = EDatabaseVersion4Drivers.indexOfByVersionDisplay(versionStr);
                 if (version != null) {
                     versionStr = version.getVersionValue();

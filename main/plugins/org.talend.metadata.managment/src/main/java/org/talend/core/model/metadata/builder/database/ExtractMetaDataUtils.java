@@ -73,6 +73,7 @@ import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
 import org.talend.core.model.metadata.builder.connection.MetadataColumn;
 import org.talend.core.model.metadata.connection.hive.HiveModeInfo;
 import org.talend.core.model.metadata.types.JavaTypesManager;
+import org.talend.core.prefs.SSLPreferenceConstants;
 import org.talend.core.runtime.CoreRuntimePlugin;
 import org.talend.core.utils.TalendQuoteUtils;
 import org.talend.designer.core.IDesignerCoreService;
@@ -942,6 +943,14 @@ public class ExtractMetaDataUtils {
             if ((driverJarPathArg == null || driverJarPathArg.equals(""))) { //$NON-NLS-1$
                 List<String> driverNames = EDatabaseVersion4Drivers.getDrivers(dbType, dbVersion);
                 if (driverNames != null) {
+                    if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(dbType)
+                            && StringUtils.isNotEmpty(additionalParams)) {
+                        if (additionalParams.contains(SSLPreferenceConstants.TRUSTSTORE_TYPE)) {
+                            driverNames.add("oraclepki.jar");//$NON-NLS-1$
+                            driverNames.add("osdt_cert.jar");//$NON-NLS-1$
+                            driverNames.add("osdt_core.jar");//$NON-NLS-1$
+                        }
+                    }
                     // fix for TUP-857 , to retreive needed jar one time
                     librairesManagerService.retrieve(driverNames, getJavaLibPath(), new NullProgressMonitor());
                     for (String jar : driverNames) {
