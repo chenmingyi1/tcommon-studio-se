@@ -260,6 +260,8 @@ public class DatabaseForm extends AbstractForm {
 
     private LabelledText keyStorePassword;
 
+    private Button disableCBCProtection;
+
     /**
      * Fields for general jdbc
      */
@@ -1345,6 +1347,11 @@ public class DatabaseForm extends AbstractForm {
                 Messages.getString("DatabaseForm.encryption.useSSLEncryption.keyStorePassword"), 1, //$NON-NLS-1$
                 SWT.PASSWORD | SWT.SINGLE | SWT.BORDER);
 
+        disableCBCProtection = new Button(sslClientAuthComposite, SWT.CHECK);
+        disableCBCProtection.setText(Messages.getString("DatabaseForm.encryption.useSSLEncryption.disableCBCProtection")); //$NON-NLS-1$
+        gridData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING | GridData.VERTICAL_ALIGN_CENTER);
+        gridData.horizontalSpan = 1;
+        disableCBCProtection.setLayoutData(gridData);
         addListenersForEncryptionGroup();
     }
 
@@ -1909,11 +1916,14 @@ public class DatabaseForm extends AbstractForm {
         if (hide) {
             getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_USE_SSL);
             getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_NEED_CLIENT_AUTH);
+            getConnection().getParameters().removeKey(ConnParameterKeys.CONN_PARA_KEY_DISABLE_CBC_PROTECTION);
         } else {
             getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_USE_SSL,
                     String.valueOf(useSSLEncryption.getSelection()));
             getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_NEED_CLIENT_AUTH,
                     String.valueOf(needClientAuth.getSelection()));
+            getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_DISABLE_CBC_PROTECTION,
+                    String.valueOf(disableCBCProtection.getSelection()));
         }
         if (isHiveDBConnSelected() || isOracleCustomDBConnSelected()) {
             String url = getStringConnection();
@@ -2716,6 +2726,20 @@ public class DatabaseForm extends AbstractForm {
                     updateKeyStorePasswordParameter();
                 }
             }
+        });
+
+        disableCBCProtection.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (!isContextMode()) {
+                    getConnection().getParameters().put(ConnParameterKeys.CONN_PARA_KEY_DISABLE_CBC_PROTECTION,
+                            String.valueOf(disableCBCProtection.getSelection()));
+                    updateSSLEncryptionDetailsDisplayStatus();
+                    urlConnectionStringText.setText(getStringConnection());
+                }
+            }
+
         });
     }
 
@@ -3997,19 +4021,22 @@ public class DatabaseForm extends AbstractForm {
                 if (isOracleCustomDBConnSelected()) {
                     if (useSSLEncryption.getSelection()) {
                         StringBuffer sb = new StringBuffer();
-                        sb.append("jsse.enableCBCProtection").append("=").append("false").append("&");//$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
                         sb.append(SSLPreferenceConstants.TRUSTSTORE_TYPE).append("=") //$NON-NLS-1$
-                                .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]).append("&");//$NON-NLS-1$
-                        sb.append(SSLPreferenceConstants.TRUSTSTORE_FILE).append("=").append(trustStorePath.getText()) //$NON-NLS-1$
-                                .append("&");//$NON-NLS-1$
-                        sb.append(SSLPreferenceConstants.TRUSTSTORE_PASSWORD).append("=").append(trustStorePassword.getText()) //$NON-NLS-1$
-                                .append("&");//$NON-NLS-1$
+                                .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]);
+                        sb.append("&").append(SSLPreferenceConstants.TRUSTSTORE_FILE).append("=") //$NON-NLS-1$//$NON-NLS-2$
+                                .append(trustStorePath.getText());
+                        sb.append("&").append(SSLPreferenceConstants.TRUSTSTORE_PASSWORD).append("=") //$NON-NLS-1$//$NON-NLS-2$
+                                .append(trustStorePassword.getText());
                         if (needClientAuth.getSelection()) {
-                            sb.append(SSLPreferenceConstants.KEYSTORE_TYPE).append("=") //$NON-NLS-1$
-                                    .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]).append("&");//$NON-NLS-1$
-                            sb.append(SSLPreferenceConstants.KEYSTORE_FILE).append("=").append(keyStorePath.getText()) //$NON-NLS-1$
-                                    .append("&");//$NON-NLS-1$
-                            sb.append(SSLPreferenceConstants.KEYSTORE_PASSWORD).append("=").append(keyStorePassword.getText());//$NON-NLS-1$
+                            sb.append("&").append(SSLPreferenceConstants.KEYSTORE_TYPE).append("=") //$NON-NLS-1$//$NON-NLS-2$
+                                    .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]);
+                            sb.append("&").append(SSLPreferenceConstants.KEYSTORE_FILE).append("=") //$NON-NLS-1$//$NON-NLS-2$
+                                    .append(keyStorePath.getText());
+                            sb.append("&").append(SSLPreferenceConstants.KEYSTORE_PASSWORD).append("=") //$NON-NLS-1$//$NON-NLS-2$
+                                    .append(keyStorePassword.getText());
+                        }
+                        if (disableCBCProtection.getSelection()) {
+                            sb.append("&").append("jsse.enableCBCProtection").append("=").append("false");//$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
                         }
                         additionParamText.setText(sb.toString());
                     }
@@ -7114,6 +7141,9 @@ public class DatabaseForm extends AbstractForm {
         }
         keyStorePassword.setText(keyStorePasswordStr);
 
+        boolean disableCBC = Boolean
+                .parseBoolean(connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_DISABLE_CBC_PROTECTION));
+        disableCBCProtection.setSelection(disableCBC);
         showIfSupportEncryption();
         updateSSLEncryptionDetailsDisplayStatus();
     }
