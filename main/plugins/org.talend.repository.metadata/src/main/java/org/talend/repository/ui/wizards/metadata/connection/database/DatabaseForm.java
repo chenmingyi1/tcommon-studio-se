@@ -4016,6 +4016,7 @@ public class DatabaseForm extends AbstractForm {
             }
             urlConnectionStringText.setText(urlStr);
         } else {
+            StringBuffer sgb = new StringBuffer();
             String versionStr = dbVersionCombo.getText();
             if (isHiveDBConnSelected()) {
                 HiveModeInfo hiveMode = HiveModeInfo.getByDisplay(hiveModeCombo.getText());
@@ -4037,25 +4038,21 @@ public class DatabaseForm extends AbstractForm {
             } else {
                 if (isOracleCustomDBConnSelected()) {
                     if (useSSLEncryption.getSelection()) {
-                        StringBuffer sb = new StringBuffer();
-                        sb.append(SSLPreferenceConstants.TRUSTSTORE_TYPE).append("=") //$NON-NLS-1$
-                                .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]);
-                        sb.append("&").append(SSLPreferenceConstants.TRUSTSTORE_FILE).append("=") //$NON-NLS-1$//$NON-NLS-2$
-                                .append(trustStorePath.getText());
-                        sb.append("&").append(SSLPreferenceConstants.TRUSTSTORE_PASSWORD).append("=") //$NON-NLS-1$//$NON-NLS-2$
-                                .append(trustStorePassword.getText());
+                        String additionParamStr = additionParamText.getText();
+                        updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.TRUSTSTORE_TYPE,
+                                SSLPreferenceConstants.KEYSTORE_TYPES[2]);
+                        updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.TRUSTSTORE_FILE,
+                                trustStorePath.getText());
+                        updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.TRUSTSTORE_PASSWORD,
+                                trustStorePassword.getText());
                         if (needClientAuth.getSelection()) {
-                            sb.append("&").append(SSLPreferenceConstants.KEYSTORE_TYPE).append("=") //$NON-NLS-1$//$NON-NLS-2$
-                                    .append(SSLPreferenceConstants.KEYSTORE_TYPES[2]);
-                            sb.append("&").append(SSLPreferenceConstants.KEYSTORE_FILE).append("=") //$NON-NLS-1$//$NON-NLS-2$
-                                    .append(keyStorePath.getText());
-                            sb.append("&").append(SSLPreferenceConstants.KEYSTORE_PASSWORD).append("=") //$NON-NLS-1$//$NON-NLS-2$
-                                    .append(keyStorePassword.getText());
+                            updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.KEYSTORE_TYPE,
+                                    SSLPreferenceConstants.KEYSTORE_TYPES[2]);
+                            updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.KEYSTORE_FILE,
+                                    keyStorePath.getText());
+                            updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.KEYSTORE_PASSWORD,
+                                    keyStorePassword.getText());
                         }
-                        if (disableCBCProtection.getSelection()) {
-                            sb.append("&").append("jsse.enableCBCProtection").append("=").append("false");//$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
-                        }
-                        additionParamText.setText(sb.toString());
                     }
                 }
                 EDatabaseVersion4Drivers version = EDatabaseVersion4Drivers.indexOfByVersionDisplay(versionStr);
@@ -4073,7 +4070,8 @@ public class DatabaseForm extends AbstractForm {
                     : urlConnectionStringText.getText(), serverText.getText(), isGeneralJDBC() ? generalJdbcUserText.getText()
                     : usernameText.getText(), isGeneralJDBC() ? generalJdbcPasswordText.getText() : passwordText.getText(),
                     sidOrDatabaseText.getText(), portText.getText(), fileField.getText(), datasourceText.getText(),
-                    isGeneralJDBC() ? jDBCschemaText.getText() : schemaText.getText(), additionParamText.getText(),
+                    isGeneralJDBC() ? jDBCschemaText.getText() : schemaText.getText(),
+                    additionParamText.getText() + sgb.toString(),
                     generalJdbcClassNameText.getText(), generalJdbcDriverjarText.getText(),
                     enableDbVersion() ? versionStr : null, metadataconnection.getOtherParameters());
 
@@ -4188,6 +4186,12 @@ public class DatabaseForm extends AbstractForm {
             if (!isReadOnly()) {
                 updateStatus(IStatus.WARNING, mainMsg);
             }
+        }
+    }
+
+    private void updateAdditionParam(StringBuffer sgb, String additionParamStr, String key, String value) {
+        if (!additionParamStr.contains(key)) {
+            sgb.append("&").append(key).append("=").append(value);//$NON-NLS-1$ //$NON-NLS-2$
         }
     }
 
@@ -5675,8 +5679,7 @@ public class DatabaseForm extends AbstractForm {
 
     private boolean isOracleCustomDBConnSelected() {
         if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(getConnectionDBType())) {
-            if (EDatabaseVersion4Drivers.ORACLE_12.name().equals(getConnection().getDbVersionString())
-                    || EDatabaseVersion4Drivers.ORACLE_11.name().equals(getConnection().getDbVersionString())) {
+            if (EDatabaseVersion4Drivers.ORACLE_12.name().equals(getConnection().getDbVersionString())) {
                 return true;
             }
         }
