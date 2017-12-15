@@ -189,6 +189,51 @@ public class DynamicDistributionAetherUtils {
         return new ArrayList<String>(versionSet);
     }
 
+    public static String getHighestVersion(String remoteUrl, String username, String password, String localPath, String groupId,
+            String artifactId, String baseVersion, String topVersion, IDynamicMonitor monitor) throws Exception {
+        // maybe need a compatible limit using baseVersion and topVersion
+        if (monitor == null) {
+            monitor = new DummyDynamicMonitor();
+        }
+        RepositorySystem repSystem = newRepositorySystem();
+        RepositorySystemSession repSysSession = newSession(repSystem, localPath, monitor);
+        updateDependencySelector((DefaultRepositorySystemSession) repSysSession, monitor);
+
+        String base = baseVersion;
+        if (base == null || base.isEmpty()) {
+            base = "0"; //$NON-NLS-1$
+        }
+        String range = ":[" + base + ","; //$NON-NLS-1$ //$NON-NLS-2$
+        if (topVersion != null && !topVersion.isEmpty()) {
+            // :[0,1)
+            range = range + topVersion + ")"; //$NON-NLS-1$
+        } else {
+            // :[0,)
+            range = range + ")"; //$NON-NLS-1$
+        }
+
+        Artifact artifact = new DefaultArtifact(groupId + ":" + artifactId + range); //$NON-NLS-1$
+        Builder builder = new RemoteRepository.Builder("central", "default", remoteUrl); //$NON-NLS-1$ //$NON-NLS-2$
+        if (StringUtils.isNotEmpty(username)) {
+            Authentication auth = new AuthenticationBuilder().addUsername(username).addPassword(password).build();
+            builder = builder.setAuthentication(auth);
+        }
+        RemoteRepository central = builder.build();
+
+        VersionRangeRequest verRangeRequest = new VersionRangeRequest();
+        verRangeRequest.addRepository(central);
+        verRangeRequest.setArtifact(artifact);
+
+        checkCancelOrNot(monitor);
+        VersionRangeResult rangeResult = repSystem.resolveVersionRange(repSysSession, verRangeRequest);
+        if (rangeResult == null) {
+            return null;
+        } else {
+            Version highestVersion = rangeResult.getHighestVersion();
+            return highestVersion.toString();
+        }
+    }
+
     private static DependencyNode convert(org.eclipse.aether.graph.DependencyNode node) {
         DependencyNode convertedNode = new DependencyNode();
 
