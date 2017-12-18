@@ -165,9 +165,7 @@ public class JDBCDriverLoader {
 
             if (additionalParams != null && !"".equals(additionalParams) && dbType.toUpperCase().contains("ORACLE")) {//$NON-NLS-1$//$NON-NLS-2$
                 if (additionalParams.contains(SSLPreferenceConstants.TRUSTSTORE_TYPE)) {
-                    // if (additionalParams.contains("jsse.enableCBCProtection")) {//$NON-NLS-1$
                     System.setProperty("jsse.enableCBCProtection", "false");//$NON-NLS-1$//$NON-NLS-2$
-                    // }
                     Object pki = ReflectionUtils.newInstance("oracle.security.pki.OraclePKIProvider", loader, //$NON-NLS-1$
                             new Object[] {});
                     ReflectionUtils.invokeStaticMethod("java.security.Security", "insertProviderAt", //$NON-NLS-1$//$NON-NLS-2$

@@ -177,6 +177,11 @@ public class MetadataConnectionUtils {
             java.sql.Connection sqlConn = null;
             List<Object> list = new ArrayList<Object>();
             try {
+                if (metadataBean.getCurrentConnection() != null
+                        && metadataBean.getCurrentConnection() instanceof DatabaseConnection) {
+                    DatabaseConnection conn = (DatabaseConnection) metadataBean.getCurrentConnection();
+                    metadataBean.setAdditionalParams(ConvertionHelper.convertAdditionalParameters(conn));
+                }
                 list = ExtractMetaDataUtils.getInstance().connect(metadataBean.getDbType(), metadataBean.getUrl(),
                         metadataBean.getUsername(), metadataBean.getPassword(), metadataBean.getDriverClass(),
                         metadataBean.getDriverJarPath(), metadataBean.getDbVersionString(), metadataBean.getAdditionalParams());
@@ -294,7 +299,7 @@ public class MetadataConnectionUtils {
 
                 }
             }// ~
-
+            additionalParams = ConvertionHelper.convertAdditionalParameters(databaseConnection);
             metadataConnection.setAdditionalParams(additionalParams);
             metadataConnection.setDbVersionString(dbVersionString);
             metadataConnection.setDatabase(dataBase);

@@ -116,6 +116,9 @@ public class ExtractMetaDataUtils {
 
     private boolean ignoreTimeout = false;
 
+    private String[] ORACLE_SSL_JARS = new String[] { "oraclepki-12.2.0.1.jar", "osdt_cert-12.2.0.1.jar", //$NON-NLS-1$//$NON-NLS-2$
+            "osdt_core-12.2.0.1.jar" }; //$NON-NLS-1$
+
     private ExtractMetaDataUtils() {
     }
 
@@ -946,9 +949,7 @@ public class ExtractMetaDataUtils {
                     if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(dbType)
                             && StringUtils.isNotEmpty(additionalParams)) {
                         if (additionalParams.contains(SSLPreferenceConstants.TRUSTSTORE_TYPE)) {
-                            driverNames.add("oraclepki.jar");//$NON-NLS-1$
-                            driverNames.add("osdt_cert.jar");//$NON-NLS-1$
-                            driverNames.add("osdt_core.jar");//$NON-NLS-1$
+                            driverNames.addAll(Arrays.asList(ORACLE_SSL_JARS));
                         }
                     }
                     // fix for TUP-857 , to retreive needed jar one time

@@ -37,6 +37,7 @@ import org.talend.core.model.context.ContextUtils;
 import org.talend.core.model.metadata.Dbms;
 import org.talend.core.model.metadata.IMetadataConnection;
 import org.talend.core.model.metadata.MetadataTalendType;
+import org.talend.core.model.metadata.builder.ConvertionHelper;
 import org.talend.core.model.metadata.builder.connection.Connection;
 import org.talend.core.model.metadata.builder.connection.ConnectionFactory;
 import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
@@ -806,6 +807,9 @@ public final class DBConnectionContextUtils {
 
         if (dbConn.getProductId().equals(EDatabaseTypeName.ORACLEFORSID.getProduct())) {
             schemaOracle = schemaOracle.toUpperCase();
+        }
+        if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(dbConn.getDatabaseType())) {
+            additionParam = ConvertionHelper.convertAdditionalParameters(dbConn);
         }
         // set the value
         managerConnection.setValue(0, dbType, urlConnection, server, username, password, sidOrDatabase, port, filePath,

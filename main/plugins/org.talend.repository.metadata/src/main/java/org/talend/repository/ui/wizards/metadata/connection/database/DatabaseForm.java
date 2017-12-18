@@ -13,6 +13,7 @@
 package org.talend.repository.ui.wizards.metadata.connection.database;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
@@ -24,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -3969,7 +3971,7 @@ public class DatabaseForm extends AbstractForm {
             }
         }
         final ManagerConnection managerConnection = new ManagerConnection();
-
+        StringBuffer sgb = new StringBuffer();
         if (isContextMode()) { // context mode
             String connectionTypeName = connectionItem.getConnection().getConnectionTypeName();
             if (connectionTypeName.equals(EDatabaseConnTemplate.HBASE.getDBDisplayName())
@@ -4016,7 +4018,6 @@ public class DatabaseForm extends AbstractForm {
             }
             urlConnectionStringText.setText(urlStr);
         } else {
-            StringBuffer sgb = new StringBuffer();
             String versionStr = dbVersionCombo.getText();
             if (isHiveDBConnSelected()) {
                 HiveModeInfo hiveMode = HiveModeInfo.getByDisplay(hiveModeCombo.getText());
@@ -4039,18 +4040,27 @@ public class DatabaseForm extends AbstractForm {
                 if (isOracleCustomDBConnSelected()) {
                     if (useSSLEncryption.getSelection()) {
                         String additionParamStr = additionParamText.getText();
-                        updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.TRUSTSTORE_TYPE,
+                        Properties info = new Properties();
+                        if (StringUtils.isNotEmpty(additionParamStr)) {
+                            try {
+                                String additionals = additionParamStr.replaceAll("&", "\n");//$NON-NLS-1$//$NON-NLS-2$
+                                info.load(new java.io.ByteArrayInputStream(additionals.getBytes()));
+                            } catch (IOException e) {
+                                // Do nothing
+                            }
+                        }
+                        ConvertionHelper.updateAdditionParam(sgb, info, SSLPreferenceConstants.TRUSTSTORE_TYPE,
                                 SSLPreferenceConstants.KEYSTORE_TYPES[2]);
-                        updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.TRUSTSTORE_FILE,
+                        ConvertionHelper.updateAdditionParam(sgb, info, SSLPreferenceConstants.TRUSTSTORE_FILE,
                                 trustStorePath.getText());
-                        updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.TRUSTSTORE_PASSWORD,
+                        ConvertionHelper.updateAdditionParam(sgb, info, SSLPreferenceConstants.TRUSTSTORE_PASSWORD,
                                 trustStorePassword.getText());
                         if (needClientAuth.getSelection()) {
-                            updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.KEYSTORE_TYPE,
+                            ConvertionHelper.updateAdditionParam(sgb, info, SSLPreferenceConstants.KEYSTORE_TYPE,
                                     SSLPreferenceConstants.KEYSTORE_TYPES[2]);
-                            updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.KEYSTORE_FILE,
+                            ConvertionHelper.updateAdditionParam(sgb, info, SSLPreferenceConstants.KEYSTORE_FILE,
                                     keyStorePath.getText());
-                            updateAdditionParam(sgb, additionParamStr, SSLPreferenceConstants.KEYSTORE_PASSWORD,
+                            ConvertionHelper.updateAdditionParam(sgb, info, SSLPreferenceConstants.KEYSTORE_PASSWORD,
                                     keyStorePassword.getText());
                         }
                     }
@@ -4186,12 +4196,6 @@ public class DatabaseForm extends AbstractForm {
             if (!isReadOnly()) {
                 updateStatus(IStatus.WARNING, mainMsg);
             }
-        }
-    }
-
-    private void updateAdditionParam(StringBuffer sgb, String additionParamStr, String key, String value) {
-        if (!additionParamStr.contains(key)) {
-            sgb.append("&").append(key).append("=").append(value);//$NON-NLS-1$ //$NON-NLS-2$
         }
     }
 
@@ -6594,6 +6598,7 @@ public class DatabaseForm extends AbstractForm {
             addContextParams(EDBParamName.Password, true);
             addContextParams(EDBParamName.Login, true);
             addContextParams(EDBParamName.Schema, true);
+            addContextParams(EDBParamName.AdditionalParams, true);
             boolean addSSLEncryptionContext = isSupportSSLEncryption() && isSupportSSLTrustStore();
             addContextParams(EDBParamName.SSLTrustStorePath, addSSLEncryptionContext);
             addContextParams(EDBParamName.SSLTrustStorePassword, addSSLEncryptionContext);
