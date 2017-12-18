@@ -64,11 +64,6 @@ public class ClassLoaderFactory {
 
     public final static String PARENT_ATTR = "parent"; //$NON-NLS-1$
 
-    static {
-        IExtensionRegistry registry = Platform.getExtensionRegistry();
-        configurationElements = registry.getConfigurationElementsFor(EXTENSION_POINT_ID);
-    }
-
     /**
      * DOC ycbai Comment method "getClassLoader".
      * 
@@ -80,7 +75,7 @@ public class ClassLoaderFactory {
     }
 
     public static DynamicClassLoader getClassLoader(String index, boolean showDownloadIfNotExist) {
-        if (classLoadersMap == null) {
+        if (isCacheChanged()) {
             init();
         }
         DynamicClassLoader classLoader = classLoadersMap.get(index);
@@ -92,7 +87,7 @@ public class ClassLoaderFactory {
     }
 
     public static DynamicClassLoader getClassLoader(String index, ClassLoader parentClassLoader) {
-        if (classLoadersMap == null) {
+        if (isCacheChanged()) {
             init();
         }
         DynamicClassLoader classLoader = classLoadersMap.get(index);
@@ -172,8 +167,9 @@ public class ClassLoaderFactory {
     }
 
     public static IConfigurationElement findIndex(String index) {
-        if (StringUtils.isNotEmpty(index) && configurationElements != null) {
-            for (IConfigurationElement current : configurationElements) {
+        IConfigurationElement[] elements = getConfigurationElements();
+        if (StringUtils.isNotEmpty(index) && elements != null) {
+            for (IConfigurationElement current : elements) {
                 String key = current.getAttribute(INDEX_ATTR);
                 if (index.equals(key)) {
                     return current;
@@ -318,8 +314,9 @@ public class ClassLoaderFactory {
     }
 
     public static String[] getDriverModuleList(String connKeyString) {
-        if (connKeyString != null && configurationElements != null) {
-            for (IConfigurationElement current : configurationElements) {
+        IConfigurationElement[] elements = getConfigurationElements();
+        if (connKeyString != null && elements != null) {
+            for (IConfigurationElement current : elements) {
                 String key = current.getAttribute(INDEX_ATTR);
                 if (connKeyString.equals(key)) {
                     String libraries = current.getAttribute(LIB_ATTR);
@@ -343,5 +340,27 @@ public class ClassLoaderFactory {
         }
         DynamicClassLoader hdClassLoader = getCustomClassLoader(index, libraries);
         return hdClassLoader;
+    }
+
+    private static synchronized IConfigurationElement[] getConfigurationElements() {
+        if (isCacheChanged()) {
+            IExtensionRegistry registry = Platform.getExtensionRegistry();
+            configurationElements = registry.getConfigurationElementsFor(EXTENSION_POINT_ID);
+        }
+        return configurationElements;
+    }
+
+    private static boolean isCacheChanged() {
+        if (configurationElements == null) {
+            return true;
+        }
+        if (configurationElements != null) {
+            for (IConfigurationElement configElement : configurationElements) {
+                if (!configElement.isValid()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
