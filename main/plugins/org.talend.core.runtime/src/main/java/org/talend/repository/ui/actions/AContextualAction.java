@@ -16,6 +16,9 @@ import java.io.File;
 import java.util.List;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.Resource.Diagnostic;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -41,6 +44,7 @@ import org.eclipse.ui.views.properties.PropertySheet;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.LoginException;
 import org.talend.commons.exception.PersistenceException;
+import org.talend.commons.exception.XMILoadException;
 import org.talend.commons.runtime.model.emf.provider.EmfResourcesFactoryReader;
 import org.talend.commons.runtime.model.emf.provider.ResourceOption;
 import org.talend.commons.ui.swt.actions.ITreeContextualAction;
@@ -102,6 +106,8 @@ public abstract class AContextualAction extends Action implements ITreeContextua
     private Item oldItem;
 
     private IRepositoryNode node;
+
+    protected boolean forceReadonly;
 
     @Override
     public boolean isEditAction() {
@@ -606,6 +612,8 @@ public abstract class AContextualAction extends Action implements ITreeContextua
     public void run() {
         final ResourceOption usingOption = ResourceOption.USING;
         try {
+            forceReadonly = false;
+
             EmfResourcesFactoryReader.INSTANCE.addOption(usingOption, true);
             delegateRun();
         } finally {
@@ -613,7 +621,7 @@ public abstract class AContextualAction extends Action implements ITreeContextua
         }
     }
 
-    public void delegateRun() {
+    protected void delegateRun() {
         String name = "User action : " + getText(); //$NON-NLS-1$
 
         oldItem = null;
@@ -637,6 +645,17 @@ public abstract class AContextualAction extends Action implements ITreeContextua
                 boolean exist = false;
                 if (node != null && node.getObject() != null) {
                     Property property = node.getObject().getProperty();
+                    final Resource res = property.eResource();
+                    if (res != null) {
+                        final EList<Diagnostic> errors = res.getErrors();
+                        for (Diagnostic d : errors) { // have error
+                            if (d instanceof XMILoadException) {
+                                forceReadonly = true;
+                            }
+                        }
+                        final EList<Diagnostic> warnings = res.getWarnings();
+
+                    }
                     // only avoid NPE if item has been deleted in svn
                     if (property != null) {
                         exist = true;
