@@ -949,7 +949,7 @@ public class ExtractMetaDataUtils {
                     if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(dbType)
                             && StringUtils.isNotEmpty(additionalParams)) {
                         if (additionalParams.contains(SSLPreferenceConstants.TRUSTSTORE_TYPE)) {
-                            driverNames.addAll(Arrays.asList(ORACLE_SSL_JARS));
+                             driverNames.addAll(Arrays.asList(ORACLE_SSL_JARS));
                         }
                     }
                     // fix for TUP-857 , to retreive needed jar one time

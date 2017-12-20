@@ -40,6 +40,7 @@ import org.talend.core.GlobalServiceRegister;
 import org.talend.core.IRepositoryContextService;
 import org.talend.core.database.EDatabase4DriverClassName;
 import org.talend.core.database.EDatabaseTypeName;
+import org.talend.core.database.conn.version.EDatabaseVersion4Drivers;
 import org.talend.core.model.metadata.IMetadataConnection;
 import org.talend.core.model.metadata.builder.ConvertionHelper;
 import org.talend.core.model.metadata.builder.MetadataConnection;
@@ -503,6 +504,18 @@ public class MetadataConnectionUtils {
             if (EDatabaseTypeName.GENERAL_JDBC.getDisplayName().equals(dbConn.getDatabaseType())) {
                 if (dbConn.getDriverClass() != null
                         && dbConn.getDriverClass().startsWith(DatabaseConstant.ODBC_ORACLE_PRODUCT_NAME)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isOracleCustomSSL(Connection connection) {
+        if (connection != null && connection instanceof DatabaseConnection) {
+            DatabaseConnection dbConn = (DatabaseConnection) connection;
+            if (EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(dbConn.getDatabaseType())) {
+                if (EDatabaseVersion4Drivers.ORACLE_12.name().equals(dbConn.getDbVersionString())) {
                     return true;
                 }
             }
