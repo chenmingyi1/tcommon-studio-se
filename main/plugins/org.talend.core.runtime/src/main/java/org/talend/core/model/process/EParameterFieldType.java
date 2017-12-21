@@ -113,7 +113,9 @@ public enum EParameterFieldType {
     CHECK_NEXUS_BUTTON,
     PATTERN_PROPERTY, // yyin, added TDQ-13437
 
-    UNIFIED_COMPONENTS;
+    UNIFIED_COMPONENTS,
+
+    TACOKIT_GUESS_SCHEMA;
 
     public String getName() {
         return toString();
