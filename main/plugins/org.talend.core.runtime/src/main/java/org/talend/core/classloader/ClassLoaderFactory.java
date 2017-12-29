@@ -258,6 +258,16 @@ public class ClassLoaderFactory {
             putInCache = librairesManagerService.retrieve(driverNotExist, libPath, showDownloadIfNotExist,
                     new NullProgressMonitor());
         }
+        File libFolder = new File(libPath);
+        File[] listFiles = libFolder.listFiles();
+        if (listFiles != null && 0 < listFiles.length) {
+            for (File file : listFiles) {
+                String filePath = file.getAbsolutePath();
+                if (!jarPathList.contains(filePath)) {
+                    jarPathList.add(filePath);
+                }
+            }
+        }
 
         classLoader.setLibStorePath(libPath);
         classLoader.addLibraries(jarPathList);
